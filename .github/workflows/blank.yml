@@ -21,12 +21,11 @@ jobs:
         run: |
           ZIP_FILE="$(find . -maxdepth 1 -type f -name 'mi_huerto_android_project*.zip' -print -quit)"
           if [ -z "$ZIP_FILE" ]; then
-            echo "No se encuentra el ZIP del proyecto Android en la raíz del repositorio."
+            echo "No se encuentra el ZIP del proyecto Android."
             ls -la
             exit 1
           fi
           echo "zip_file=$ZIP_FILE" >> "$GITHUB_OUTPUT"
-          echo "Se usará: $ZIP_FILE"
 
       - name: Descomprimir el proyecto Android
         run: unzip -q "${{ steps.project.outputs.zip_file }}" -d android-project
@@ -37,15 +36,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Preparar Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
       - name: Preparar Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '16.0'
+          packages: 'platform-tools'
 
-      - name: Instalar componentes de Android
+      - name: Instalar componentes de Android necesarios
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Comprobar estructura del proyecto
@@ -53,7 +50,6 @@ jobs:
           test -f android-project/mi_huerto_android/settings.gradle
           test -f android-project/mi_huerto_android/app/build.gradle
           test -f android-project/mi_huerto_android/app/src/main/AndroidManifest.xml
-          ls -la android-project/mi_huerto_android
 
       - name: Compilar el APK
         working-directory: android-project/mi_huerto_android
