@@ -15,16 +15,21 @@ jobs:
       - name: Descargar los archivos del repositorio
         uses: actions/checkout@v4
 
-      - name: Comprobar que está el proyecto Android
+      - name: Localizar el proyecto Android
+        id: project
+        shell: bash
         run: |
-          if [ ! -f mi_huerto_android_project.zip ]; then
-            echo "Falta mi_huerto_android_project.zip en la raíz del repositorio."
-            echo "Sube ese archivo a GitHub y vuelve a intentarlo."
+          ZIP_FILE="$(find . -maxdepth 1 -type f -name 'mi_huerto_android_project*.zip' -print -quit)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No se encuentra el ZIP del proyecto Android en la raíz del repositorio."
+            ls -la
             exit 1
           fi
+          echo "zip_file=$ZIP_FILE" >> "$GITHUB_OUTPUT"
+          echo "Se usará: $ZIP_FILE"
 
       - name: Descomprimir el proyecto Android
-        run: unzip -q mi_huerto_android_project.zip -d android-project
+        run: unzip -q "${{ steps.project.outputs.zip_file }}" -d android-project
 
       - name: Preparar Java
         uses: actions/setup-java@v4
@@ -42,6 +47,13 @@ jobs:
 
       - name: Instalar componentes de Android
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Comprobar estructura del proyecto
+        run: |
+          test -f android-project/mi_huerto_android/settings.gradle
+          test -f android-project/mi_huerto_android/app/build.gradle
+          test -f android-project/mi_huerto_android/app/src/main/AndroidManifest.xml
+          ls -la android-project/mi_huerto_android
 
       - name: Compilar el APK
         working-directory: android-project/mi_huerto_android
